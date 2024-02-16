@@ -1,0 +1,206 @@
+package net.nerdypuzzle.blockstates.parts;
+
+import net.mcreator.ui.MCreator;
+import net.mcreator.ui.component.SearchableComboBox;
+import net.mcreator.ui.component.entries.JSimpleListEntry;
+import net.mcreator.ui.component.util.ComboBoxUtil;
+import net.mcreator.ui.component.util.ComponentUtils;
+import net.mcreator.ui.component.util.PanelUtils;
+import net.mcreator.ui.dialogs.TypedTextureSelectorDialog;
+import net.mcreator.ui.help.HelpUtils;
+import net.mcreator.ui.help.IHelpContext;
+import net.mcreator.ui.init.L10N;
+import net.mcreator.ui.laf.renderer.ModelComboBoxRenderer;
+import net.mcreator.ui.laf.themes.Theme;
+import net.mcreator.ui.minecraft.TextureHolder;
+import net.mcreator.ui.validation.AggregatedValidationResult;
+import net.mcreator.ui.validation.IValidable;
+import net.mcreator.ui.validation.ValidationGroup;
+import net.mcreator.ui.validation.Validator;
+import net.mcreator.ui.validation.validators.TileHolderValidator;
+import net.mcreator.ui.workspace.resources.TextureType;
+import net.mcreator.util.ListUtils;
+import net.mcreator.workspace.Workspace;
+import net.mcreator.workspace.resources.Model;
+import net.nerdypuzzle.blockstates.elements.Blockstates;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.BlockstateListEntry> implements IValidable {
+    private final Workspace workspace;
+    private final ValidationGroup page1group = new ValidationGroup();
+    private TextureHolder texture;
+    private TextureHolder textureTop;
+    private TextureHolder textureLeft;
+    private TextureHolder textureFront;
+    private TextureHolder textureRight;
+    private TextureHolder textureBack;
+    private TextureHolder particleTexture;
+    private final Model normal;
+    private final Model singleTexture;
+    private final SearchableComboBox<Model> renderType;
+    private Validator validator;
+    private final int index;
+
+    public JBlockstateListEntry(MCreator mcreator, IHelpContext gui, JPanel parent, List<JBlockstateListEntry> entryList, int index) {
+        super(parent, entryList);
+        this.index = index;
+        this.workspace = mcreator.getWorkspace();
+        this.line.setOpaque(false);
+        this.normal = new Model.BuiltInModel("Normal");
+        this.singleTexture = new Model.BuiltInModel("Single texture");
+        this.renderType = new SearchableComboBox(new Model[]{this.normal, this.singleTexture});
+        this.renderType.addActionListener((e) -> {
+            this.updateTextureOptions();
+        });
+        ComponentUtils.deriveFont(this.renderType, 16.0F);
+        this.renderType.setPreferredSize(new Dimension(320, 42));
+        this.renderType.setRenderer(new ModelComboBoxRenderer());
+
+        JPanel destal = new JPanel(new GridLayout(3, 4));
+        destal.setOpaque(false);
+        this.texture = (new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK))).setFlipUV(true);
+        this.textureTop = (new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK))).setFlipUV(true);
+        this.textureLeft = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.textureFront = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.textureRight = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.textureBack = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.particleTexture = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK), 32);
+        this.particleTexture.setOpaque(false);
+        this.texture.setOpaque(false);
+        this.textureTop.setOpaque(false);
+        this.textureLeft.setOpaque(false);
+        this.textureFront.setOpaque(false);
+        this.textureRight.setOpaque(false);
+        this.textureBack.setOpaque(false);
+        destal.add(new JLabel());
+        destal.add(ComponentUtils.squareAndBorder(this.textureTop, L10N.t("elementgui.block.texture_place_top", new Object[0])));
+        destal.add(new JLabel());
+        destal.add(new JLabel());
+        destal.add(ComponentUtils.squareAndBorder(this.textureLeft, new Color(126, 196, 255), L10N.t("elementgui.block.texture_place_left_overlay", new Object[0])));
+        destal.add(ComponentUtils.squareAndBorder(this.textureFront, L10N.t("elementgui.block.texture_place_front_side", new Object[0])));
+        destal.add(ComponentUtils.squareAndBorder(this.textureRight, L10N.t("elementgui.block.texture_place_right", new Object[0])));
+        destal.add(ComponentUtils.squareAndBorder(this.textureBack, L10N.t("elementgui.block.texture_place_back", new Object[0])));
+        this.textureLeft.setActionListener((event) -> {
+            if (!this.texture.hasTexture() && !this.textureTop.hasTexture() && !this.textureBack.hasTexture() && !this.textureFront.hasTexture() && !this.textureRight.hasTexture()) {
+                this.texture.setTextureFromTextureName(this.textureLeft.getID());
+                this.textureTop.setTextureFromTextureName(this.textureLeft.getID());
+                this.textureBack.setTextureFromTextureName(this.textureLeft.getID());
+                this.textureFront.setTextureFromTextureName(this.textureLeft.getID());
+                this.textureRight.setTextureFromTextureName(this.textureLeft.getID());
+            }
+
+        });
+        destal.add(new JLabel());
+        destal.add(ComponentUtils.squareAndBorder(this.texture, new Color(125, 255, 174), L10N.t("elementgui.block.texture_place_bottom_main", new Object[0])));
+        destal.add(new JLabel());
+        destal.add(new JLabel());
+        JPanel sbbp22 = PanelUtils.totalCenterInPanel(destal);
+        sbbp22.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.current().getForegroundColor(), 1), L10N.t("elementgui.block.block_textures", new Object[0]), 0, 0, this.getFont().deriveFont(12.0F), Theme.current().getForegroundColor()));
+        JPanel topnbot = new JPanel(new BorderLayout());
+        topnbot.setOpaque(false);
+        topnbot.add("Center", sbbp22);
+        JPanel bottomPanel = new JPanel(new GridLayout(2, 2, 0, 2));
+        bottomPanel.setOpaque(false);
+        bottomPanel.add(HelpUtils.wrapWithHelpButton(gui.withEntry("block/model"), L10N.label("elementgui.block.model", new Object[0])));
+        bottomPanel.add(this.renderType);
+        bottomPanel.add(HelpUtils.wrapWithHelpButton(gui.withEntry("block/particle_texture"), L10N.label("elementgui.block.particle_texture", new Object[0])));
+        bottomPanel.add(this.particleTexture);
+        bottomPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.current().getForegroundColor(), 1), L10N.t("elementgui.blockstates.model", new Object[0]), 0, 0, this.getFont().deriveFont(12.0F), Theme.current().getForegroundColor()));
+        topnbot.add("East", PanelUtils.pullElementUp(bottomPanel));
+        topnbot.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.current().getForegroundColor(), 1), L10N.t("elementgui.blockstates.blockstate", new Object[0]) + " " + index, 0, 0, this.getFont().deriveFont(12.0F), Theme.current().getForegroundColor()));
+        this.line.add(PanelUtils.totalCenterInPanel(topnbot));
+    }
+    private void updateTextureOptions() {
+        this.textureTop.setFlipUV(false);
+        this.textureTop.setVisible(false);
+        this.textureLeft.setVisible(false);
+        this.textureFront.setVisible(false);
+        this.textureRight.setVisible(false);
+        this.textureBack.setVisible(false);
+        if (this.normal.equals(this.renderType.getSelectedItem())) {
+            this.texture.setFlipUV(true);
+            this.texture.setVisible(true);
+            this.textureTop.setFlipUV(true);
+            this.textureTop.setVisible(true);
+            this.textureLeft.setVisible(true);
+            this.textureFront.setVisible(true);
+            this.textureRight.setVisible(true);
+            this.textureBack.setVisible(true);
+        }
+
+        this.texture.setValidator(new TileHolderValidator(this.texture));
+        this.page1group.addValidationElement(this.texture);
+
+    }
+
+
+    public void reloadDataLists() {
+        super.reloadDataLists();
+        ComboBoxUtil.updateComboBoxContents(this.renderType, ListUtils.merge(Arrays.asList(this.normal, this.singleTexture), (Collection)Model.getModelsWithTextureMaps(workspace).stream().filter((el) -> {
+            return el.getType() == Model.Type.JSON || el.getType() == Model.Type.OBJ;
+        }).collect(Collectors.toList())));
+    }
+
+    protected void setEntryEnabled(boolean enabled) {
+    }
+
+    @Override public Validator.ValidationResult getValidationStatus() {
+        Validator.ValidationResult validationResult = Validator.ValidationResult.PASSED;
+        if (!page1group.validateIsErrorFree()) {
+            Validator.ValidationResult result = new Validator.ValidationResult(Validator.ValidationResultType.ERROR, page1group.getValidationProblemMessages().get(0));
+            return result;
+        }
+        return validationResult;
+    }
+
+    @Override public void setValidator(Validator validator) {
+        this.validator = validator;
+    }
+
+    @Override public Validator getValidator() {
+        return validator;
+    }
+
+    public Blockstates.BlockstateListEntry getEntry() {
+        Blockstates.BlockstateListEntry entry = new Blockstates.BlockstateListEntry();
+        Model model = (Model) Objects.requireNonNull((Model)this.renderType.getSelectedItem());
+        entry.renderType = 0;
+        if (model.getType() == Model.Type.JSON) {
+            entry.renderType = 2;
+        } else if (model.getType() == Model.Type.OBJ) {
+            entry.renderType = 3;
+        } else if (model.equals(this.singleTexture)) {
+            entry.renderType = 4;
+        }
+        entry.customModelName = model.getReadableName();
+        entry.particleTexture = this.particleTexture.getID();
+        entry.texture = this.texture.getID();
+        entry.textureTop = this.textureTop.getID();
+        entry.textureLeft = this.textureLeft.getID();
+        entry.textureFront = this.textureFront.getID();
+        entry.textureRight = this.textureRight.getID();
+        entry.textureBack = this.textureBack.getID();
+        return entry;
+    }
+
+    public void setEntry(Blockstates.BlockstateListEntry e) {
+        Model model = e.getItemModel(workspace);
+        if (model != null && model.getType() != null && model.getReadableName() != null) {
+            this.renderType.setSelectedItem(model);
+        }
+        this.particleTexture.setTextureFromTextureName(e.particleTexture);
+        this.texture.setTextureFromTextureName(e.texture);
+        this.textureTop.setTextureFromTextureName(e.textureTop);
+        this.textureLeft.setTextureFromTextureName(e.textureLeft);
+        this.textureFront.setTextureFromTextureName(e.textureFront);
+        this.textureRight.setTextureFromTextureName(e.textureRight);
+        this.textureBack.setTextureFromTextureName(e.textureBack);
+    }
+}

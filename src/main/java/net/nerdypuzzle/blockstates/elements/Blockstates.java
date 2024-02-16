@@ -1,0 +1,132 @@
+package net.nerdypuzzle.blockstates.elements;
+
+import net.mcreator.element.GeneratableElement;
+import net.mcreator.element.parts.IWorkspaceDependent;
+import net.mcreator.element.types.Item;
+import net.mcreator.ui.workspace.resources.TextureType;
+import net.mcreator.workspace.Workspace;
+import net.mcreator.workspace.elements.ModElement;
+import net.mcreator.workspace.references.TextureReference;
+import net.mcreator.workspace.resources.Model;
+import net.mcreator.workspace.resources.TexturedModel;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class Blockstates extends GeneratableElement {
+    public String block;
+
+    public List<BlockstateListEntry> blockstateList = new ArrayList<>();
+
+    public static class BlockstateListEntry {
+        @TextureReference(TextureType.BLOCK)
+        public String texture;
+        @TextureReference(TextureType.BLOCK)
+        public String textureTop;
+        @TextureReference(TextureType.BLOCK)
+        public String textureLeft;
+        @TextureReference(TextureType.BLOCK)
+        public String textureFront;
+        @TextureReference(TextureType.BLOCK)
+        public String textureRight;
+        @TextureReference(TextureType.BLOCK)
+        public String textureBack;
+        @TextureReference(TextureType.BLOCK)
+        public String particleTexture;
+        public int renderType;
+        public String customModelName;
+
+        public int renderType() {
+            return renderType;
+        }
+        public Model getItemModel(Workspace workspace) {
+            Model.Type modelType = Model.Type.BUILTIN;
+            if (this.renderType == 2) {
+                modelType = Model.Type.JSON;
+            } else if (this.renderType == 3) {
+                modelType = Model.Type.OBJ;
+            }
+
+            return Model.getModelByParams(workspace, this.customModelName, modelType);
+        }
+    }
+
+    public static class BlockstateEntry implements IWorkspaceDependent {
+        public String block;
+        public String texture;
+        public String textureTop;
+        public String textureLeft;
+        public String textureFront;
+        public String textureRight;
+        public String textureBack;
+        public String particleTexture;
+        public String customModelName;
+        public int renderType;
+
+        @Nullable
+        transient Workspace workspace;
+
+        @Override
+        public void setWorkspace(@Nullable Workspace workspace) {
+            this.workspace = workspace;
+        }
+
+        @Nullable
+        @Override
+        public Workspace getWorkspace() {
+            return this.workspace;
+        }
+
+        public Model getItemModel() {
+            Model.Type modelType = Model.Type.BUILTIN;
+            if (renderType == 2) {
+                modelType = Model.Type.JSON;
+            } else if (renderType == 3) {
+                modelType = Model.Type.OBJ;
+            }
+
+            return Model.getModelByParams(workspace, customModelName, modelType);
+        }
+
+        public Map<String, String> getTextureMap() {
+            Model model = getItemModel();
+            return (Map)(model instanceof TexturedModel && ((TexturedModel)model).getTextureMapping() != null ? ((TexturedModel)model).getTextureMapping().getTextureMap() : new HashMap());
+        }
+
+        public int renderType() {
+            return renderType;
+        }
+
+    }
+
+    public List<BlockstateEntry> getBlockstates() {
+        List<BlockstateEntry> entries = new ArrayList<>();
+        for (BlockstateListEntry state : blockstateList) {
+            BlockstateEntry entry = new BlockstateEntry();
+            entry.setWorkspace(getModElement().getWorkspace());
+            entry.block = block;
+            entry.particleTexture = state.particleTexture;
+            entry.texture = state.texture;
+            entry.textureBack = state.textureBack;
+            entry.textureFront = state.textureFront;
+            entry.textureLeft = state.textureLeft;
+            entry.textureRight = state.textureRight;
+            entry.textureTop = state.textureTop;
+            entry.customModelName = state.customModelName;
+            entry.renderType = state.renderType;
+            entries.add(entry);
+        }
+        return entries;
+    }
+    public Blockstates(ModElement element) {
+        super(element);
+    }
+
+    public int getBlockstateAmount() {
+        return blockstateList.size();
+    }
+
+}
