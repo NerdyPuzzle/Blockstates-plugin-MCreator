@@ -1,6 +1,5 @@
 package net.nerdypuzzle.blockstates.parts;
 
-import net.mcreator.element.types.interfaces.IBlockWithBoundingBox;
 import net.mcreator.ui.MCreator;
 import net.mcreator.ui.component.SearchableComboBox;
 import net.mcreator.ui.component.entries.JSimpleListEntry;
@@ -15,7 +14,6 @@ import net.mcreator.ui.laf.renderer.ModelComboBoxRenderer;
 import net.mcreator.ui.laf.themes.Theme;
 import net.mcreator.ui.minecraft.TextureHolder;
 import net.mcreator.ui.minecraft.boundingboxes.JBoundingBoxList;
-import net.mcreator.ui.validation.AggregatedValidationResult;
 import net.mcreator.ui.validation.IValidable;
 import net.mcreator.ui.validation.ValidationGroup;
 import net.mcreator.ui.validation.Validator;
@@ -30,7 +28,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.BlockstateListEntry> implements IValidable {

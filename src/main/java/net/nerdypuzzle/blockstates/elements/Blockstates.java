@@ -2,7 +2,6 @@ package net.nerdypuzzle.blockstates.elements;
 
 import net.mcreator.element.GeneratableElement;
 import net.mcreator.element.parts.IWorkspaceDependent;
-import net.mcreator.element.types.Item;
 import net.mcreator.element.types.interfaces.IBlockWithBoundingBox;
 import net.mcreator.ui.workspace.resources.TextureType;
 import net.mcreator.workspace.Workspace;
