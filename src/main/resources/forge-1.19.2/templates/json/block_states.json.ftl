@@ -1,4 +1,5 @@
-<#assign blockstates = w.hasElementsOfType("blockstates")?then(w.getGElementsOfType("blockstates")?filter(states -> states.block == name)[0], "")>
+<#assign states = w.hasElementsOfType("blockstates")?then(w.getGElementsOfType("blockstates")?filter(states -> states.block == name), "")>
+<#assign blockstates = states?has_content?then(states[0], "")>
 <#if data.rotationMode?? && (data.rotationMode == 1 || data.rotationMode == 3)>
 <#if data.enablePitch>
 {

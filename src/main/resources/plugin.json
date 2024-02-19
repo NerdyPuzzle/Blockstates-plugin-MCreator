@@ -6,7 +6,7 @@
   "javaplugin": "net.nerdypuzzle.blockstates.Launcher",
   "info": {
     "name": "Blockstates",
-    "version": "1.0",
+    "version": "1.2",
     "description": "Adds a new element to allow for the creation of block blockstates",
     "author": "NerdyPuzzle"
   }

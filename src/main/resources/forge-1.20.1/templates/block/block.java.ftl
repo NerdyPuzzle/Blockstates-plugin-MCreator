@@ -38,7 +38,8 @@ package ${package}.block;
 
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
-<#assign blockstates = w.hasElementsOfType("blockstates")?then(w.getGElementsOfType("blockstates")?filter(states -> states.block == name)[0], "")>
+<#assign states = w.hasElementsOfType("blockstates")?then(w.getGElementsOfType("blockstates")?filter(states -> states.block == name), "")>
+<#assign blockstates = states?has_content?then(states[0], "")>
 
 <#compress>
 public class ${name}Block extends
