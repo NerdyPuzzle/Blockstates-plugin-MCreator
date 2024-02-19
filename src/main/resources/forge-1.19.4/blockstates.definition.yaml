@@ -5,6 +5,17 @@ list_templates:
       - template: blockstates/block.json.ftl
         writer: json
         condition: ${data.renderType() == 4}
+        variables: "model=cube_all;txname=all"
+        name: "@MODASSETSROOT/models/block/@registryname_blockstate_@itemindex.json"
+      - template: blockstates/block.json.ftl
+        writer: json
+        condition: ${data.renderType() == 1}
+        variables: "model=cross;txname=cross"
+        name: "@MODASSETSROOT/models/block/@registryname_blockstate_@itemindex.json"
+      - template: blockstates/block.json.ftl
+        writer: json
+        condition: ${data.renderType() == 5}
+        variables: "model=crop;txname=crop"
         name: "@MODASSETSROOT/models/block/@registryname_blockstate_@itemindex.json"
       - template: blockstates/block_all_fixed.json.ftl
         writer: json

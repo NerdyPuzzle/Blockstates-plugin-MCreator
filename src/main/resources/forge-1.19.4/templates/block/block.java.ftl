@@ -109,8 +109,18 @@ public class ${name}Block extends
 		<#else>
 			.strength(${data.hardness}f, ${data.resistance}f)
 		</#if>
-		<#if data.luminance != 0>
+		<#if data.luminance != 0 && blockstates == "">
 			.lightLevel(s -> ${data.luminance})
+		<#elseif blockstates != "">
+		    .lightLevel(s -> (new Object() {
+		        public int getLightLevel() {
+		            <#list blockstates.blockstateList as state>
+		                if (s.getValue(BLOCKSTATE) == ${state?index + 1})
+		                    return ${state.luminance};
+		            </#list>
+		            return ${data.luminance};
+		        }
+		    }.getLightLevel()))
 		</#if>
 		<#if data.requiresCorrectTool>
 			.requiresCorrectToolForDrops()
@@ -247,8 +257,22 @@ public class ${name}Block extends
 	}
 	</#if>
 
-	<#if data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube()>
+	<#if (data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube()) || blockstates != "">
 	@Override public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+	    <#if blockstates != "">
+	        <#list blockstates.blockstateList as state>
+	            <#if state.boundingBoxes?has_content>
+	                if (state.getValue(BLOCKSTATE) == ${state?index + 1}) {
+	            		<#if state.isBoundingBoxEmpty()>
+                			return Shapes.empty();
+                		<#else>
+                			<#if !data.shouldDisableOffset()>Vec3 offset = state.getOffset(world, pos);</#if>
+                			<@boundingBoxWithRotation state.positiveBoundingBoxes() state.negativeBoundingBoxes() data.shouldDisableOffset() data.rotationMode data.enablePitch/>
+                		</#if>
+	                }
+	            </#if>
+	        </#list>
+	    </#if>
 		<#if data.isBoundingBoxEmpty()>
 			return Shapes.empty();
 		<#else>

@@ -1,5 +1,6 @@
 package net.nerdypuzzle.blockstates.parts;
 
+import net.mcreator.element.types.interfaces.IBlockWithBoundingBox;
 import net.mcreator.ui.MCreator;
 import net.mcreator.ui.component.SearchableComboBox;
 import net.mcreator.ui.component.entries.JSimpleListEntry;
@@ -13,6 +14,7 @@ import net.mcreator.ui.init.L10N;
 import net.mcreator.ui.laf.renderer.ModelComboBoxRenderer;
 import net.mcreator.ui.laf.themes.Theme;
 import net.mcreator.ui.minecraft.TextureHolder;
+import net.mcreator.ui.minecraft.boundingboxes.JBoundingBoxList;
 import net.mcreator.ui.validation.AggregatedValidationResult;
 import net.mcreator.ui.validation.IValidable;
 import net.mcreator.ui.validation.ValidationGroup;
@@ -26,10 +28,9 @@ import net.nerdypuzzle.blockstates.elements.Blockstates;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.BlockstateListEntry> implements IValidable {
@@ -44,8 +45,12 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
     private TextureHolder particleTexture;
     private final Model normal;
     private final Model singleTexture;
+    private final Model cross;
+    private final Model crop;
     private final SearchableComboBox<Model> renderType;
     private Validator validator;
+    private final JSpinner luminance;
+    private JBoundingBoxList boundingBoxList;
     private final int index;
 
     public JBlockstateListEntry(MCreator mcreator, IHelpContext gui, JPanel parent, List<JBlockstateListEntry> entryList, int index) {
@@ -55,13 +60,26 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
         this.line.setOpaque(false);
         this.normal = new Model.BuiltInModel("Normal");
         this.singleTexture = new Model.BuiltInModel("Single texture");
-        this.renderType = new SearchableComboBox(new Model[]{this.normal, this.singleTexture});
+        this.cross = new Model.BuiltInModel("Cross model");
+        this.crop = new Model.BuiltInModel("Crop model");
+        this.renderType = new SearchableComboBox(new Model[]{this.normal, this.singleTexture, this.cross, this.crop});
         this.renderType.addActionListener((e) -> {
             this.updateTextureOptions();
         });
         ComponentUtils.deriveFont(this.renderType, 16.0F);
         this.renderType.setPreferredSize(new Dimension(320, 42));
         this.renderType.setRenderer(new ModelComboBoxRenderer());
+        this.luminance = new JSpinner(new SpinnerNumberModel(0, 0, 15, 1));
+
+        SearchableComboBox<Model> var10005 = this.renderType;
+        Objects.requireNonNull(var10005);
+        this.boundingBoxList = new JBoundingBoxList(mcreator, gui, var10005::getSelectedItem);
+        this.renderType.addActionListener((e) -> {
+                    Model selected = (Model) this.renderType.getSelectedItem();
+                    if (selected != null) {
+                        this.boundingBoxList.modelChanged();
+                    }
+        });
 
         JPanel destal = new JPanel(new GridLayout(3, 4));
         destal.setOpaque(false);
@@ -106,14 +124,17 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
         JPanel topnbot = new JPanel(new BorderLayout());
         topnbot.setOpaque(false);
         topnbot.add("Center", sbbp22);
-        JPanel bottomPanel = new JPanel(new GridLayout(2, 2, 0, 2));
+        JPanel bottomPanel = new JPanel(new GridLayout(3, 2, 0, 2));
         bottomPanel.setOpaque(false);
         bottomPanel.add(HelpUtils.wrapWithHelpButton(gui.withEntry("block/model"), L10N.label("elementgui.block.model", new Object[0])));
         bottomPanel.add(this.renderType);
         bottomPanel.add(HelpUtils.wrapWithHelpButton(gui.withEntry("block/particle_texture"), L10N.label("elementgui.block.particle_texture", new Object[0])));
         bottomPanel.add(this.particleTexture);
+        bottomPanel.add(HelpUtils.wrapWithHelpButton(gui.withEntry("block/luminance"), L10N.label("elementgui.common.luminance", new Object[0])));
+        bottomPanel.add(this.luminance);
         bottomPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.current().getForegroundColor(), 1), L10N.t("elementgui.blockstates.model", new Object[0]), 0, 0, this.getFont().deriveFont(12.0F), Theme.current().getForegroundColor()));
-        topnbot.add("East", PanelUtils.pullElementUp(bottomPanel));
+        this.boundingBoxList.setPreferredSize(new Dimension(200, 170));
+        topnbot.add("East", PanelUtils.pullElementUp(PanelUtils.northAndCenterElement(bottomPanel, boundingBoxList)));
         topnbot.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Theme.current().getForegroundColor(), 1), L10N.t("elementgui.blockstates.blockstate", new Object[0]) + " " + index, 0, 0, this.getFont().deriveFont(12.0F), Theme.current().getForegroundColor()));
         this.line.add(PanelUtils.totalCenterInPanel(topnbot));
     }
@@ -143,7 +164,7 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
 
     public void reloadDataLists() {
         super.reloadDataLists();
-        ComboBoxUtil.updateComboBoxContents(this.renderType, ListUtils.merge(Arrays.asList(this.normal, this.singleTexture), (Collection)Model.getModelsWithTextureMaps(workspace).stream().filter((el) -> {
+        ComboBoxUtil.updateComboBoxContents(this.renderType, ListUtils.merge(Arrays.asList(this.normal, this.singleTexture, this.cross, this.crop), (Collection)Model.getModelsWithTextureMaps(workspace).stream().filter((el) -> {
             return el.getType() == Model.Type.JSON || el.getType() == Model.Type.OBJ;
         }).collect(Collectors.toList())));
     }
@@ -178,6 +199,10 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
             entry.renderType = 3;
         } else if (model.equals(this.singleTexture)) {
             entry.renderType = 4;
+        } else if (model.equals(this.cross)) {
+            entry.renderType = 1;
+        } else if (model.equals(this.crop)) {
+            entry.renderType = 5;
         }
         entry.customModelName = model.getReadableName();
         entry.particleTexture = this.particleTexture.getID();
@@ -187,6 +212,8 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
         entry.textureFront = this.textureFront.getID();
         entry.textureRight = this.textureRight.getID();
         entry.textureBack = this.textureBack.getID();
+        entry.luminance = (Integer)this.luminance.getValue();
+        entry.boundingBoxes = this.boundingBoxList.getEntries();
         return entry;
     }
 
@@ -202,5 +229,7 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
         this.textureFront.setTextureFromTextureName(e.textureFront);
         this.textureRight.setTextureFromTextureName(e.textureRight);
         this.textureBack.setTextureFromTextureName(e.textureBack);
+        this.luminance.setValue(e.luminance);
+        this.boundingBoxList.setEntries(e.boundingBoxes);
     }
 }

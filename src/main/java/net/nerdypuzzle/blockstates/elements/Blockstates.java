@@ -3,6 +3,7 @@ package net.nerdypuzzle.blockstates.elements;
 import net.mcreator.element.GeneratableElement;
 import net.mcreator.element.parts.IWorkspaceDependent;
 import net.mcreator.element.types.Item;
+import net.mcreator.element.types.interfaces.IBlockWithBoundingBox;
 import net.mcreator.ui.workspace.resources.TextureType;
 import net.mcreator.workspace.Workspace;
 import net.mcreator.workspace.elements.ModElement;
@@ -10,18 +11,24 @@ import net.mcreator.workspace.references.TextureReference;
 import net.mcreator.workspace.resources.Model;
 import net.mcreator.workspace.resources.TexturedModel;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Blockstates extends GeneratableElement {
     public String block;
 
     public List<BlockstateListEntry> blockstateList = new ArrayList<>();
 
-    public static class BlockstateListEntry {
+    public static class BlockstateListEntry implements IBlockWithBoundingBox {
+        public BlockstateListEntry() {
+            boundingBoxes = new ArrayList<>();
+        }
+
         @TextureReference(TextureType.BLOCK)
         public String texture;
         @TextureReference(TextureType.BLOCK)
@@ -38,6 +45,8 @@ public class Blockstates extends GeneratableElement {
         public String particleTexture;
         public int renderType;
         public String customModelName;
+        public int luminance;
+        public List<IBlockWithBoundingBox.BoxEntry> boundingBoxes;
 
         public int renderType() {
             return renderType;
@@ -51,6 +60,12 @@ public class Blockstates extends GeneratableElement {
             }
 
             return Model.getModelByParams(workspace, this.customModelName, modelType);
+        }
+
+        @Nonnull
+        @Override
+        public List<BoxEntry> getValidBoundingBoxes() {
+            return (List)boundingBoxes.stream().filter(IBlockWithBoundingBox.BoxEntry::isNotEmpty).collect(Collectors.toList());
         }
     }
 
