@@ -153,7 +153,7 @@ public class ${name}Block extends
 		<#if data.hasTransparency>
 			.isRedstoneConductor((bs, br, bp) -> false)
 		</#if>
-		<#if (data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube() && data.offsetType != "NONE")
+		<#if ((data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube() && data.offsetType != "NONE") || (data.offsetType != "NONE" && blockstates != ""))
 				|| (data.blockBase?has_content && !data.isFullCube())>
 			.dynamicShape()
 		</#if>
