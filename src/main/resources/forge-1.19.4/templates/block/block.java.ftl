@@ -37,6 +37,7 @@
 package ${package}.block;
 
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.material.Material;
 
 <#assign states = w.hasElementsOfType("blockstates")?then(w.getGElementsOfType("blockstates")?filter(states -> states.block == name), "")>
 <#assign blockstates = states?has_content?then(states[0], "")>
