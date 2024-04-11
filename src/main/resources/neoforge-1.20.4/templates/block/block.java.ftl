@@ -37,7 +37,6 @@
 package ${package}.block;
 
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
-import net.minecraft.world.level.material.Material;
 
 <#assign states = w.hasElementsOfType("blockstates")?then(w.getGElementsOfType("blockstates")?filter(states -> states.block == name), "")>
 <#assign blockstates = states?has_content?then(states[0], "")>
@@ -84,19 +83,31 @@ public class ${name}Block extends
 		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 	</#if>
 
+	<#if data.hasGravity>
+	public static final MapCodec<${name}Block> CODEC = simpleCodec(${name}Block::new);
+
+	public MapCodec<${name}Block> codec() {
+		return CODEC;
+	}
+
+	public ${name}Block(BlockBehaviour.Properties ignored) {
+		this();
+	}
+	</#if>
+
 	<#macro blockProperties>
+		BlockBehaviour.Properties.of()
+		${data.material}
 		<#if generator.map(data.colorOnMap, "mapcolors") != "DEFAULT">
-			BlockBehaviour.Properties.of(Material.${data.material}, MaterialColor.${generator.map(data.colorOnMap, "mapcolors")})
-		<#else>
-			BlockBehaviour.Properties.of(Material.${data.material})
+			.mapColor(MapColor.${generator.map(data.colorOnMap, "mapcolors")})
 		</#if>
 		<#if data.isCustomSoundType>
-			.sound(new ForgeSoundType(1.0f, 1.0f,
-				() -> ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.breakSound}")),
-				() -> ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.stepSound}")),
-				() -> ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.placeSound}")),
-				() -> ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.hitSound}")),
-				() -> ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.fallSound}"))
+			.sound(new DeferredSoundType(1.0f, 1.0f,
+				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.breakSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.stepSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.placeSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.hitSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.fallSound}"))
 			))
 		<#else>
 			.sound(SoundType.${data.soundOnStep})
@@ -144,6 +155,9 @@ public class ${name}Block extends
 		<#if data.tickRandomly>
 			.randomTicks()
 		</#if>
+		<#if data.reactionToPushing != "NORMAL">
+			.pushReaction(PushReaction.${data.reactionToPushing})
+		</#if>
 		<#if data.emissiveRendering>
 			.hasPostProcess((bs, br, bp) -> true).emissiveRendering((bs, br, bp) -> true)
 		</#if>
@@ -157,6 +171,16 @@ public class ${name}Block extends
 		<#if data.offsetType != "NONE">
 			.offsetType(Block.OffsetType.${data.offsetType})
 		</#if>
+		<#if data.blockBase?has_content && (
+				data.blockBase == "FenceGate" ||
+				data.blockBase == "PressurePlate" ||
+				data.blockBase == "Fence" ||
+				data.blockBase == "Wall")>
+			.forceSolidOn()
+		</#if>
+		<#if data.blockBase?has_content && data.blockBase == "EndRod">
+			.forceSolidOff()
+		</#if>
 	</#macro>
 
 	public ${name}Block() {
@@ -164,26 +188,26 @@ public class ${name}Block extends
 			super(() -> Blocks.AIR.defaultBlockState(), <@blockProperties/>);
 		<#elseif data.blockBase?has_content && data.blockBase == "PressurePlate">
 		    <#if data.material.getUnmappedValue() == "WOOD">
-		        super(Sensitivity.EVERYTHING, <@blockProperties/>, BlockSetType.OAK);
+		        super(BlockSetType.OAK, <@blockProperties/>);
 		    <#else>
-		        super(Sensitivity.MOBS, <@blockProperties/>, BlockSetType.IRON);
+		        super(BlockSetType.IRON, <@blockProperties/>);
 		    </#if>
 		<#elseif data.blockBase?has_content && data.blockBase == "Button">
 			<#if data.material.getUnmappedValue() == "WOOD">
-		        super(<@blockProperties/>, BlockSetType.OAK, 30, true);
+		        super(BlockSetType.OAK, 30, <@blockProperties/>);
 			<#else>
-		        super(<@blockProperties/>, BlockSetType.STONE, 20, false);
+		        super(BlockSetType.STONE, 20, <@blockProperties/>);
 			</#if>
 		<#elseif data.blockBase?has_content && (data.blockBase == "TrapDoor" || data.blockBase == "Door")>
 			<#if data.material.getUnmappedValue() == "IRON">
-				super(<@blockProperties/>, BlockSetType.IRON);
+				super(BlockSetType.IRON, <@blockProperties/>);
 			<#elseif data.material.getUnmappedValue() == "WOOD">
-				super(<@blockProperties/>, BlockSetType.OAK);
+				super(BlockSetType.OAK, <@blockProperties/>);
 			<#else>
-				super(<@blockProperties/>, BlockSetType.STONE);
+				super(BlockSetType.STONE, <@blockProperties/>);
 			</#if>
 		<#elseif data.blockBase?has_content && data.blockBase == "FenceGate">
-			super(<@blockProperties/>, WoodType.OAK);
+			super(WoodType.OAK, <@blockProperties/>);
 		<#else>
 			super(<@blockProperties/>);
 		</#if>
@@ -210,10 +234,6 @@ public class ${name}Block extends
 	<#if data.blockBase?has_content && data.blockBase == "Stairs">
    	@Override public float getExplosionResistance() {
 		return ${data.resistance}f;
-   	}
-
-   	@Override public boolean isRandomlyTicking(BlockState state) {
-		return ${data.tickRandomly?c};
    	}
 	</#if>
 
@@ -280,7 +300,7 @@ public class ${name}Block extends
 	}
 	</#if>
 
-    <#if data.rotationMode != 0 || data.isWaterloggable || blockstates != "">
+	<#if data.rotationMode != 0 || data.isWaterloggable || blockstates != "">
 	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		<#assign props = []>
 		<#if data.rotationMode == 5>
@@ -295,8 +315,8 @@ public class ${name}Block extends
 			<#assign props += ["WATERLOGGED"]>
 		</#if>
 		<#if blockstates != "">
-		    <#assign props += ["BLOCKSTATE"]>
-		</#if>
+        	<#assign props += ["BLOCKSTATE"]>
+        </#if>
 		builder.add(${props?join(", ")});
 	}
 	</#if>
@@ -455,7 +475,7 @@ public class ${name}Block extends
 	</#if>
 
 	<#if data.creativePickItem?? && !data.creativePickItem.isEmpty()>
-	@Override public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter world, BlockPos pos, Player player) {
+	@Override public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
 		return ${mappedMCItemToItemStackCode(data.creativePickItem, 1)};
 	}
 	</#if>
@@ -476,12 +496,6 @@ public class ${name}Block extends
 	<#if data.isLadder>
 	@Override public boolean isLadder(BlockState state, LevelReader world, BlockPos pos, LivingEntity entity) {
 		return true;
-	}
-	</#if>
-
-	<#if data.reactionToPushing != "NORMAL">
-	@Override public PushReaction getPistonPushReaction(BlockState state) {
-		return PushReaction.${data.reactionToPushing};
 	}
 	</#if>
 
@@ -510,14 +524,15 @@ public class ${name}Block extends
 	<@onRedstoneOrNeighborChanged data.onRedstoneOn, data.onRedstoneOff, data.onNeighbourBlockChanges/>
 
 	<#if hasProcedure(data.onTickUpdate)>
-	@Override public void <#if data.tickRandomly && (data.blockBase?has_content && data.blockBase == "Stairs")>randomTick<#else>tick</#if>
-			(BlockState blockstate, ServerLevel world, BlockPos pos, RandomSource random) {
-		super.<#if data.tickRandomly && (data.blockBase?has_content && data.blockBase == "Stairs")>randomTick<#else>tick</#if>(blockstate, world, pos, random);
-		int x = pos.getX();
-		int y = pos.getY();
-		int z = pos.getZ();
-
-		<@procedureOBJToCode data.onTickUpdate/>
+	@Override public void <#if data.tickRandomly>randomTick<#else>tick</#if>(BlockState blockstate, ServerLevel world, BlockPos pos, RandomSource random) {
+		super.<#if data.tickRandomly>randomTick<#else>tick</#if>(blockstate, world, pos, random);
+		<@procedureCode data.onTickUpdate, {
+			"x": "pos.getX()",
+			"y": "pos.getY()",
+			"z": "pos.getZ()",
+			"world": "world",
+			"blockstate": "blockstate"
+		}/>
 
 		<#if data.shouldScheduleTick()>
 		world.scheduleTick(pos, this, ${data.tickRate});
@@ -526,8 +541,7 @@ public class ${name}Block extends
 	</#if>
 
 	<#if hasProcedure(data.onRandomUpdateEvent)>
-	@OnlyIn(Dist.CLIENT) @Override
-	public void animateTick(BlockState blockstate, Level world, BlockPos pos, RandomSource random) {
+	@OnlyIn(Dist.CLIENT) @Override public void animateTick(BlockState blockstate, Level world, BlockPos pos, RandomSource random) {
 		super.animateTick(blockstate, world, pos, random);
 		Player entity = Minecraft.getInstance().player;
 		int x = pos.getX();
@@ -557,7 +571,7 @@ public class ${name}Block extends
 		super.use(blockstate, world, pos, entity, hand, hit);
 		<#if data.shouldOpenGUIOnRightClick()>
 		if(entity instanceof ServerPlayer player) {
-			NetworkHooks.openScreen(player, new MenuProvider() {
+			player.openMenu(new MenuProvider() {
 				@Override public Component getDisplayName() {
 					return Component.literal("${data.name}");
 				}

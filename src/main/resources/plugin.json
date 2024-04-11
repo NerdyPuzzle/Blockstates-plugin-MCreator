@@ -1,12 +1,13 @@
 {
   "id": "blockstates",
-  "minversion": 202300400000,
-  "maxversion": 202300499999,
   "weight": 3001,
   "javaplugin": "net.nerdypuzzle.blockstates.Launcher",
+  "supportedversions": [
+    202400115713
+  ],
   "info": {
     "name": "Blockstates",
-    "version": "1.2.2",
+    "version": "1.3",
     "description": "Adds a new element to allow for the creation of block blockstates",
     "author": "NerdyPuzzle"
   }
