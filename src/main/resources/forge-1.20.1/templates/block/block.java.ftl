@@ -1,4 +1,5 @@
 <#--
+<#--
  # MCreator (https://mcreator.net/)
  # Copyright (C) 2012-2020, Pylo
  # Copyright (C) 2020-2023, Pylo, opensource contributors
@@ -501,7 +502,7 @@ public class ${name}Block extends
 	<#if data.requiresCorrectTool && (data.breakHarvestLevel > 3)>
 	@Override public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
 		if(player.getInventory().getSelected().getItem() instanceof
-				<#if data.destroyTool == "pickaxe">PickaxeItem
+				<#if data.destroyTool == "pickaxe">DiggerItem
 				<#elseif data.destroyTool == "axe">AxeItem
 				<#elseif data.destroyTool == "shovel">ShovelItem
 				<#elseif data.destroyTool == "hoe">HoeItem
