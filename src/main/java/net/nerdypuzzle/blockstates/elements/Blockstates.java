@@ -2,6 +2,7 @@ package net.nerdypuzzle.blockstates.elements;
 
 import net.mcreator.element.GeneratableElement;
 import net.mcreator.element.parts.IWorkspaceDependent;
+import net.mcreator.element.parts.TextureHolder;
 import net.mcreator.element.types.interfaces.IBlockWithBoundingBox;
 import net.mcreator.ui.workspace.resources.TextureType;
 import net.mcreator.workspace.Workspace;
@@ -29,19 +30,19 @@ public class Blockstates extends GeneratableElement {
         }
 
         @TextureReference(TextureType.BLOCK)
-        public String texture;
+        public TextureHolder texture;
         @TextureReference(TextureType.BLOCK)
-        public String textureTop;
+        public TextureHolder textureTop;
         @TextureReference(TextureType.BLOCK)
-        public String textureLeft;
+        public TextureHolder textureLeft;
         @TextureReference(TextureType.BLOCK)
-        public String textureFront;
+        public TextureHolder textureFront;
         @TextureReference(TextureType.BLOCK)
-        public String textureRight;
+        public TextureHolder textureRight;
         @TextureReference(TextureType.BLOCK)
-        public String textureBack;
+        public TextureHolder textureBack;
         @TextureReference(TextureType.BLOCK)
-        public String particleTexture;
+        public TextureHolder particleTexture;
         public int renderType;
         public String customModelName;
         public int luminance;
@@ -70,13 +71,13 @@ public class Blockstates extends GeneratableElement {
 
     public static class BlockstateEntry implements IWorkspaceDependent {
         public String block;
-        public String texture;
-        public String textureTop;
-        public String textureLeft;
-        public String textureFront;
-        public String textureRight;
-        public String textureBack;
-        public String particleTexture;
+        public TextureHolder texture;
+        public TextureHolder textureTop;
+        public TextureHolder textureLeft;
+        public TextureHolder textureFront;
+        public TextureHolder textureRight;
+        public TextureHolder textureBack;
+        public TextureHolder particleTexture;
         public String customModelName;
         public int renderType;
 

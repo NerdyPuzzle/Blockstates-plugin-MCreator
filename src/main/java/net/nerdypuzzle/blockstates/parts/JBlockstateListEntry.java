@@ -1,5 +1,6 @@
 package net.nerdypuzzle.blockstates.parts;
 
+import net.mcreator.element.parts.TextureHolder;
 import net.mcreator.ui.MCreator;
 import net.mcreator.ui.component.SearchableComboBox;
 import net.mcreator.ui.component.entries.JSimpleListEntry;
@@ -12,7 +13,7 @@ import net.mcreator.ui.help.IHelpContext;
 import net.mcreator.ui.init.L10N;
 import net.mcreator.ui.laf.renderer.ModelComboBoxRenderer;
 import net.mcreator.ui.laf.themes.Theme;
-import net.mcreator.ui.minecraft.TextureHolder;
+import net.mcreator.ui.minecraft.TextureSelectionButton;
 import net.mcreator.ui.minecraft.boundingboxes.JBoundingBoxList;
 import net.mcreator.ui.validation.IValidable;
 import net.mcreator.ui.validation.ValidationGroup;
@@ -33,13 +34,13 @@ import java.util.stream.Collectors;
 public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.BlockstateListEntry> implements IValidable {
     private final Workspace workspace;
     private final ValidationGroup page1group = new ValidationGroup();
-    private TextureHolder texture;
-    private TextureHolder textureTop;
-    private TextureHolder textureLeft;
-    private TextureHolder textureFront;
-    private TextureHolder textureRight;
-    private TextureHolder textureBack;
-    private TextureHolder particleTexture;
+    private TextureSelectionButton texture;
+    private TextureSelectionButton textureTop;
+    private TextureSelectionButton textureLeft;
+    private TextureSelectionButton textureFront;
+    private TextureSelectionButton textureRight;
+    private TextureSelectionButton textureBack;
+    private TextureSelectionButton particleTexture;
     private final Model normal;
     private final Model singleTexture;
     private final Model cross;
@@ -80,13 +81,13 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
 
         JPanel destal = new JPanel(new GridLayout(3, 4));
         destal.setOpaque(false);
-        this.texture = (new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK))).setFlipUV(true);
-        this.textureTop = (new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK))).setFlipUV(true);
-        this.textureLeft = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
-        this.textureFront = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
-        this.textureRight = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
-        this.textureBack = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
-        this.particleTexture = new TextureHolder(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK), 32);
+        this.texture = new TextureSelectionButton(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK)).setFlipUV(true);
+        this.textureTop = new TextureSelectionButton(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK)).setFlipUV(true);
+        this.textureLeft = new TextureSelectionButton(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.textureFront = new TextureSelectionButton(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.textureRight = new TextureSelectionButton(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.textureBack = new TextureSelectionButton(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK));
+        this.particleTexture = new TextureSelectionButton(new TypedTextureSelectorDialog(mcreator, TextureType.BLOCK), 32);
         this.particleTexture.setOpaque(false);
         this.texture.setOpaque(false);
         this.textureTop.setOpaque(false);
@@ -104,11 +105,11 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
         destal.add(ComponentUtils.squareAndBorder(this.textureBack, L10N.t("elementgui.block.texture_place_back", new Object[0])));
         this.textureLeft.setActionListener((event) -> {
             if (!this.texture.hasTexture() && !this.textureTop.hasTexture() && !this.textureBack.hasTexture() && !this.textureFront.hasTexture() && !this.textureRight.hasTexture()) {
-                this.texture.setTextureFromTextureName(this.textureLeft.getID());
-                this.textureTop.setTextureFromTextureName(this.textureLeft.getID());
-                this.textureBack.setTextureFromTextureName(this.textureLeft.getID());
-                this.textureFront.setTextureFromTextureName(this.textureLeft.getID());
-                this.textureRight.setTextureFromTextureName(this.textureLeft.getID());
+                this.texture.setTexture(this.textureLeft.getTextureHolder());
+                this.textureTop.setTexture(this.textureLeft.getTextureHolder());
+                this.textureBack.setTexture(this.textureLeft.getTextureHolder());
+                this.textureFront.setTexture(this.textureLeft.getTextureHolder());
+                this.textureRight.setTexture(this.textureLeft.getTextureHolder());
             }
 
         });
@@ -202,13 +203,13 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
             entry.renderType = 5;
         }
         entry.customModelName = model.getReadableName();
-        entry.particleTexture = this.particleTexture.getID();
-        entry.texture = this.texture.getID();
-        entry.textureTop = this.textureTop.getID();
-        entry.textureLeft = this.textureLeft.getID();
-        entry.textureFront = this.textureFront.getID();
-        entry.textureRight = this.textureRight.getID();
-        entry.textureBack = this.textureBack.getID();
+        entry.particleTexture = this.particleTexture.getTextureHolder();
+        entry.texture = this.texture.getTextureHolder();
+        entry.textureTop = this.textureTop.getTextureHolder();
+        entry.textureLeft = this.textureLeft.getTextureHolder();
+        entry.textureFront = this.textureFront.getTextureHolder();
+        entry.textureRight = this.textureRight.getTextureHolder();
+        entry.textureBack = this.textureBack.getTextureHolder();
         entry.luminance = (Integer)this.luminance.getValue();
         entry.boundingBoxes = this.boundingBoxList.getEntries();
         return entry;
@@ -219,13 +220,13 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
         if (model != null && model.getType() != null && model.getReadableName() != null) {
             this.renderType.setSelectedItem(model);
         }
-        this.particleTexture.setTextureFromTextureName(e.particleTexture);
-        this.texture.setTextureFromTextureName(e.texture);
-        this.textureTop.setTextureFromTextureName(e.textureTop);
-        this.textureLeft.setTextureFromTextureName(e.textureLeft);
-        this.textureFront.setTextureFromTextureName(e.textureFront);
-        this.textureRight.setTextureFromTextureName(e.textureRight);
-        this.textureBack.setTextureFromTextureName(e.textureBack);
+        this.particleTexture.setTexture(e.particleTexture);
+        this.texture.setTexture(e.texture);
+        this.textureTop.setTexture(e.textureTop);
+        this.textureLeft.setTexture(e.textureLeft);
+        this.textureFront.setTexture(e.textureFront);
+        this.textureRight.setTexture(e.textureRight);
+        this.textureBack.setTexture(e.textureBack);
         this.luminance.setValue(e.luminance);
         this.boundingBoxList.setEntries(e.boundingBoxes);
     }
