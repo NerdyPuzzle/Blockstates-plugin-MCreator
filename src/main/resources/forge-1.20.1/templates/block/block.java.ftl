@@ -1,5 +1,4 @@
 <#--
-<#--
  # MCreator (https://mcreator.net/)
  # Copyright (C) 2012-2020, Pylo
  # Copyright (C) 2020-2023, Pylo, opensource contributors
@@ -499,17 +498,16 @@ public class ${name}Block extends
 	}
 	</#if>
 
-	<#if data.requiresCorrectTool && (data.breakHarvestLevel > 3)>
+	<#if hasProcedure(data.additionalHarvestCondition)>
 	@Override public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
-		if(player.getInventory().getSelected().getItem() instanceof
-				<#if data.destroyTool == "pickaxe">DiggerItem
-				<#elseif data.destroyTool == "axe">AxeItem
-				<#elseif data.destroyTool == "shovel">ShovelItem
-				<#elseif data.destroyTool == "hoe">HoeItem
-				<#else>TieredItem</#if> tieredItem)
-			return tieredItem.getTier().getLevel() >= ${data.breakHarvestLevel};
-		else
-			return super.canHarvestBlock(state, world, pos, player);
+		return super.canHarvestBlock(state, world, pos, player) && <@procedureCode data.additionalHarvestCondition, {
+			"x": "pos.getX()",
+			"y": "pos.getY()",
+			"z": "pos.getZ()",
+			"entity": "player",
+			"world": "player.level()",
+			"blockstate": "state"
+		}, false/>;
 	}
 	</#if>
 
@@ -534,8 +532,7 @@ public class ${name}Block extends
 	</#if>
 
 	<#if hasProcedure(data.onRandomUpdateEvent)>
-	@OnlyIn(Dist.CLIENT) @Override
-	public void animateTick(BlockState blockstate, Level world, BlockPos pos, RandomSource random) {
+	@OnlyIn(Dist.CLIENT) @Override public void animateTick(BlockState blockstate, Level world, BlockPos pos, RandomSource random) {
 		super.animateTick(blockstate, world, pos, random);
 		Player entity = Minecraft.getInstance().player;
 		int x = pos.getX();

@@ -84,14 +84,10 @@ public class ${name}Block extends
 	</#if>
 
 	<#if data.hasGravity>
-	public static final MapCodec<${name}Block> CODEC = simpleCodec(${name}Block::new);
+	public static final MapCodec<${name}Block> CODEC = simpleCodec(properties -> new ${name}Block());
 
 	public MapCodec<${name}Block> codec() {
 		return CODEC;
-	}
-
-	public ${name}Block(BlockBehaviour.Properties ignored) {
-		this();
 	}
 	</#if>
 
@@ -185,7 +181,7 @@ public class ${name}Block extends
 
 	public ${name}Block() {
 		<#if data.blockBase?has_content && data.blockBase == "Stairs">
-			super(() -> Blocks.AIR.defaultBlockState(), <@blockProperties/>);
+			super(Blocks.AIR.defaultBlockState(), <@blockProperties/>);
 		<#elseif data.blockBase?has_content && data.blockBase == "PressurePlate">
 		    <#if data.material.getUnmappedValue() == "WOOD">
 		        super(BlockSetType.OAK, <@blockProperties/>);
@@ -481,8 +477,8 @@ public class ${name}Block extends
 	</#if>
 
 	<#if generator.map(data.aiPathNodeType, "pathnodetypes") != "DEFAULT">
-	@Override public BlockPathTypes getBlockPathType(BlockState state, BlockGetter world, BlockPos pos, Mob entity) {
-		return BlockPathTypes.${generator.map(data.aiPathNodeType, "pathnodetypes")};
+	@Override public PathType getBlockPathType(BlockState state, BlockGetter world, BlockPos pos, Mob entity) {
+		return PathType.${generator.map(data.aiPathNodeType, "pathnodetypes")};
 	}
 	</#if>
 
@@ -506,17 +502,16 @@ public class ${name}Block extends
 	}
 	</#if>
 
-	<#if data.requiresCorrectTool && (data.breakHarvestLevel > 3)>
+	<#if hasProcedure(data.additionalHarvestCondition)>
 	@Override public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
-		if(player.getInventory().getSelected().getItem() instanceof
-				<#if data.destroyTool == "pickaxe">PickaxeItem
-				<#elseif data.destroyTool == "axe">AxeItem
-				<#elseif data.destroyTool == "shovel">ShovelItem
-				<#elseif data.destroyTool == "hoe">HoeItem
-				<#else>TieredItem</#if> tieredItem)
-			return tieredItem.getTier().getLevel() >= ${data.breakHarvestLevel};
-		else
-			return super.canHarvestBlock(state, world, pos, player);
+		return super.canHarvestBlock(state, world, pos, player) && <@procedureCode data.additionalHarvestCondition, {
+			"x": "pos.getX()",
+			"y": "pos.getY()",
+			"z": "pos.getZ()",
+			"entity": "player",
+			"world": "player.level()",
+			"blockstate": "state"
+		}, false/>;
 	}
 	</#if>
 
@@ -568,8 +563,8 @@ public class ${name}Block extends
 
 	<#if hasProcedure(data.onRightClicked) || data.shouldOpenGUIOnRightClick()>
 	@Override
-	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		super.use(blockstate, world, pos, entity, hand, hit);
+	public InteractionResult useWithoutItem(BlockState blockstate, Level world, BlockPos pos, Player entity, BlockHitResult hit) {
+		super.useWithoutItem(blockstate, world, pos, entity, hit);
 		<#if data.shouldOpenGUIOnRightClick()>
 		if(entity instanceof ServerPlayer player) {
 			player.openMenu(new MenuProvider() {
