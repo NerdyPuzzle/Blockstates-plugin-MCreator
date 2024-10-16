@@ -82,6 +82,16 @@ public class ${name}Block extends
 	<#if data.isWaterloggable>
 		public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 	</#if>
+	<#list data.customProperties as prop>
+		<#assign propName = prop.property().getName().replace("CUSTOM:", "")>
+		<#if prop.property().getClass().getSimpleName().equals("LogicType")>
+			public static final BooleanProperty ${propName?upper_case} = BooleanProperty.create("${propName}");
+		<#elseif prop.property().getClass().getSimpleName().equals("IntegerType")>
+			public static final IntegerProperty ${propName?upper_case} = IntegerProperty.create("${propName}", ${prop.property().getMin()}, ${prop.property().getMax()});
+		<#elseif prop.property().getClass().getSimpleName().equals("StringType")>
+			public static final EnumProperty<${StringUtils.snakeToCamel(propName)}Property> ${propName?upper_case} = EnumProperty.create("${propName}", ${StringUtils.snakeToCamel(propName)}Property.class);
+		</#if>
+	</#list>
 
 	<#if data.hasGravity>
 	public static final MapCodec<${name}Block> CODEC = simpleCodec(properties -> new ${name}Block());
@@ -99,11 +109,11 @@ public class ${name}Block extends
 		</#if>
 		<#if data.isCustomSoundType>
 			.sound(new DeferredSoundType(1.0f, 1.0f,
-				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.breakSound}")),
-				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.stepSound}")),
-				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.placeSound}")),
-				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.hitSound}")),
-				() -> BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation("${data.fallSound}"))
+				() -> BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("${data.breakSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("${data.stepSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("${data.placeSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("${data.hitSound}")),
+				() -> BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("${data.fallSound}"))
 			))
 		<#else>
 			.sound(SoundType.${data.soundOnStep})
@@ -160,8 +170,7 @@ public class ${name}Block extends
 		<#if data.hasTransparency>
 			.isRedstoneConductor((bs, br, bp) -> false)
 		</#if>
-		<#if ((data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube() && data.offsetType != "NONE") || (data.offsetType != "NONE" && blockstates != ""))
-				|| (data.blockBase?has_content && !data.isFullCube())>
+		<#if ((data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube() && data.offsetType != "NONE") || (data.offsetType != "NONE" && blockstates != "")) || (data.blockBase?has_content && !data.isFullCube())>
 			.dynamicShape()
 		</#if>
 		<#if data.offsetType != "NONE">
@@ -208,7 +217,7 @@ public class ${name}Block extends
 			super(<@blockProperties/>);
 		</#if>
 
-	    <#if data.rotationMode != 0 || data.isWaterloggable>
+	    <#if data.rotationMode != 0 || data.isWaterloggable || data.customProperties?has_content>
 	    this.registerDefaultState(this.stateDefinition.any()
 	    	<#if data.rotationMode == 1 || data.rotationMode == 3>
 	    	.setValue(FACING, Direction.NORTH)
@@ -220,6 +229,7 @@ public class ${name}Block extends
 	    	<#elseif data.rotationMode == 5>
 	    	.setValue(AXIS, Direction.Axis.Y)
 	    	</#if>
+			<@initCustomBlockStateProperties />
 	    	<#if data.isWaterloggable>
 	    	.setValue(WATERLOGGED, false)
 	    	</#if>
@@ -242,8 +252,8 @@ public class ${name}Block extends
 	</#if>
 
 	<#if data.beaconColorModifier?has_content>
-	@Override public float[] getBeaconColorMultiplier(BlockState state, LevelReader world, BlockPos pos, BlockPos beaconPos) {
-		return new float[] { ${data.beaconColorModifier.getRed()/255}f, ${data.beaconColorModifier.getGreen()/255}f, ${data.beaconColorModifier.getBlue()/255}f };
+	@Override public Integer getBeaconColorMultiplier(BlockState state, LevelReader world, BlockPos pos, BlockPos beaconPos) {
+		return FastColor.ARGB32.opaque(${data.beaconColorModifier.getRGB()});
 	}
 	</#if>
 
@@ -296,8 +306,9 @@ public class ${name}Block extends
 	}
 	</#if>
 
-	<#if data.rotationMode != 0 || data.isWaterloggable || blockstates != "">
+	<#if data.rotationMode != 0 || data.isWaterloggable || data.customProperties?has_content || blockstates != "">
 	@Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		super.createBlockStateDefinition(builder);
 		<#assign props = []>
 		<#if data.rotationMode == 5>
 			<#assign props += ["AXIS"]>
@@ -307,6 +318,9 @@ public class ${name}Block extends
 				<#assign props += ["FACE"]>
 			</#if>
 		</#if>
+		<#list data.customProperties as prop>
+			<#assign props += [prop.property().getName().replace("CUSTOM:", "")?upper_case]>
+		</#list>
 		<#if data.isWaterloggable>
 			<#assign props += ["WATERLOGGED"]>
 		</#if>
@@ -317,14 +331,14 @@ public class ${name}Block extends
 	}
 	</#if>
 
-    <#if data.rotationMode != 0 || data.isWaterloggable>
+    <#if data.rotationMode != 0 || data.isWaterloggable || data.customProperties?has_content>
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext context) {
 		<#if data.isWaterloggable>
 		boolean flag = context.getLevel().getFluidState(context.getClickedPos()).getType() == Fluids.WATER;
 		</#if>
 		<#if data.rotationMode != 3>
-		return this.defaultBlockState()
+		return super.getStateForPlacement(context)
 			<#if data.rotationMode == 1>
 			    <#if data.enablePitch>
 			    .setValue(FACE, faceForDirection(context.getNearestLookingDirection()))
@@ -337,33 +351,49 @@ public class ${name}Block extends
 			<#elseif data.rotationMode == 5>
 			.setValue(AXIS, context.getClickedFace().getAxis())
 			</#if>
+	    	<@initCustomBlockStateProperties />
 			<#if data.isWaterloggable>
 			.setValue(WATERLOGGED, flag)
 			</#if>;
 		<#elseif data.rotationMode == 3>
 	    if (context.getClickedFace().getAxis() == Direction.Axis.Y)
-	        return this.defaultBlockState()
+	        return super.getStateForPlacement(context)
 	    		<#if data.enablePitch>
 	    		    .setValue(FACE, context.getClickedFace().getOpposite() == Direction.UP ? AttachFace.CEILING : AttachFace.FLOOR)
 	    		    .setValue(FACING, context.getHorizontalDirection())
 	    		<#else>
 	    		    .setValue(FACING, Direction.NORTH)
 	    		</#if>
+	    		<@initCustomBlockStateProperties />
 	    		<#if data.isWaterloggable>
 	    		.setValue(WATERLOGGED, flag)
 	    		</#if>;
 
-	    return this.defaultBlockState()
+	    return super.getStateForPlacement(context)
 	    	<#if data.enablePitch>
 	    	    .setValue(FACE, AttachFace.WALL)
 	    	</#if>
 	    	.setValue(FACING, context.getClickedFace())
+	    	<@initCustomBlockStateProperties />
 	    	<#if data.isWaterloggable>
 	    	.setValue(WATERLOGGED, flag)
 	    	</#if>;
 		</#if>
 	}
 	</#if>
+
+	<#macro initCustomBlockStateProperties>
+		<#list data.customProperties as prop>
+			<#assign propName = prop.property().getName().replace("CUSTOM:", "")>
+			.setValue(${propName?upper_case},
+				<#if prop.property().getClass().getSimpleName().equals("StringType")>
+				${StringUtils.snakeToCamel(propName)}Property.${prop.value()?upper_case}
+				<#else>
+				${prop.value()}
+				</#if>
+			)
+		</#list>
+	</#macro>
 
 	<#if data.rotationMode != 0>
 		<#if data.rotationMode != 5>
@@ -484,8 +514,8 @@ public class ${name}Block extends
 
 	<#if data.plantsGrowOn>
 	@Override
-	public boolean canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction direction, IPlantable plantable) {
-		return true;
+	public TriState canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction direction, BlockState plant) {
+		return TriState.TRUE;
 	}
 	</#if>
 
@@ -703,6 +733,27 @@ public class ${name}Block extends
 		}
 		</#if>
 	</#if>
+
+	<#list data.customProperties as prop>
+		<#if prop.property().getClass().getSimpleName().equals("StringType")>
+		<#assign propClassName = StringUtils.snakeToCamel(prop.property().getName().replace("CUSTOM:", ""))>
+		public enum ${propClassName}Property implements StringRepresentable {
+			<#list prop.property.getArrayData() as value>
+			${value?upper_case}("${value}")<#sep>,
+			</#list>;
+
+			private final String name;
+
+			private ${propClassName}Property(String name) {
+				this.name = name;
+			}
+
+			@Override public String getSerializedName() {
+				return this.name;
+			}
+		}
+		</#if>
+	</#list>
 
 }
 </#compress>

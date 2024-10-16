@@ -3,11 +3,11 @@
   "weight": 3001,
   "javaplugin": "net.nerdypuzzle.blockstates.Launcher",
   "supportedversions": [
-    2024002
+    2024003
   ],
   "info": {
     "name": "Blockstates",
-    "version": "1.4",
+    "version": "1.5",
     "description": "Adds a new element to allow for the creation of block blockstates",
     "author": "NerdyPuzzle"
   }
