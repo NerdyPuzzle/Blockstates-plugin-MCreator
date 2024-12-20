@@ -2,8 +2,8 @@
 {
   "parent": "block/${var_model}",
   "textures": {
-    "${var_txname}": "${modid}:block/${data.texture}",
-    "particle": "${modid}:block/${data.particleTexture?has_content?then(data.particleTexture, element.particleTexture?has_content?then(element.particleTexture, element.texture))}"
+    "${var_txname}": "${data.texture.format("%s:block/%s")}",
+    "particle": "${data.particleTexture?has_content?then(data.particleTexture, element.particleTexture?has_content?then(element.particleTexture, element.texture)).format("%s:block/%s")}"
   },
   "render_type": "${element.getRenderType()}"
 }
