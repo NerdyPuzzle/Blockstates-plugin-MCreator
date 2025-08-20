@@ -2,6 +2,7 @@ package net.nerdypuzzle.blockstates.elements;
 
 import net.mcreator.element.ModElementType;
 import net.mcreator.ui.MCreator;
+import net.mcreator.ui.MCreatorApplication;
 import net.mcreator.ui.component.JEmptyBox;
 import net.mcreator.ui.component.SearchableComboBox;
 import net.mcreator.ui.component.util.ComboBoxUtil;
@@ -15,7 +16,10 @@ import net.mcreator.workspace.elements.ModElement;
 import net.nerdypuzzle.blockstates.parts.JBlockstateList;
 import net.nerdypuzzle.blockstates.parts.PluginElementTypes;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.util.stream.Collectors;
@@ -99,6 +103,10 @@ public class BlockstatesGUI extends ModElementGUI<Blockstates> {
         blockstates.block = block.getSelectedItem();
         blockstates.blockstateList = blockstateList.getEntries();
         return blockstates;
+    }
+
+    @Override public @Nullable URI contextURL() throws URISyntaxException {
+        return new URI(MCreatorApplication.SERVER_DOMAIN + "/wiki/how-make-block");
     }
 
 }
