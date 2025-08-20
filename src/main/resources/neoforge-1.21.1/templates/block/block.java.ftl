@@ -117,7 +117,6 @@ public class ${name}Block extends
 
 	<#macro blockProperties>
 		BlockBehaviour.Properties.of()
-		${data.material}
 		<#if generator.map(data.colorOnMap, "mapcolors") != "DEFAULT">
 			.mapColor(MapColor.${generator.map(data.colorOnMap, "mapcolors")})
 		</#if>
@@ -129,7 +128,7 @@ public class ${name}Block extends
 				() -> BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("${data.hitSound}")),
 				() -> BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse("${data.fallSound}"))
 			))
-		<#else>
+		<#elseif data.soundOnStep != "STONE">
 			.sound(SoundType.${data.soundOnStep})
 		</#if>
 		<#if data.unbreakable>
@@ -184,11 +183,20 @@ public class ${name}Block extends
 		<#if data.hasTransparency>
 			.isRedstoneConductor((bs, br, bp) -> false)
 		</#if>
-		<#if ((data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube() && data.offsetType != "NONE") || (data.offsetType != "NONE" && blockstates != "")) || (data.blockBase?has_content && !data.isFullCube())>
+		<#if (!data.isNotColidable && data.offsetType != "NONE") || (blockstates != "" && data.boundingBoxes??)>
 			.dynamicShape()
+		</#if>
+		<#if data.isReplaceable>
+			.replaceable()
 		</#if>
 		<#if data.offsetType != "NONE">
 			.offsetType(Block.OffsetType.${data.offsetType})
+		</#if>
+		<#if data.ignitedByLava>
+			.ignitedByLava()
+		</#if>
+		<#if data.noteBlockInstrument != "harp">
+			.instrument(${generator.map(data.noteBlockInstrument, "noteblockinstruments")})
 		</#if>
 		<#if data.blockBase?has_content && (
 				data.blockBase == "FenceGate" ||
@@ -200,33 +208,24 @@ public class ${name}Block extends
 		<#if data.blockBase?has_content && data.blockBase == "EndRod">
 			.forceSolidOff()
 		</#if>
+		<#if data.blockBase?has_content && data.blockBase == "Leaves">
+			.isSuffocating((bs, br, bp) -> false).isViewBlocking((bs, br, bp) -> false)
+		</#if>
 	</#macro>
 
 	public ${name}Block() {
-		<#if data.blockBase?has_content && data.blockBase == "Stairs">
-			super(Blocks.AIR.defaultBlockState(), <@blockProperties/>);
-		<#elseif data.blockBase?has_content && data.blockBase == "PressurePlate">
-		    <#if data.material.getUnmappedValue() == "WOOD">
-		        super(BlockSetType.OAK, <@blockProperties/>);
-		    <#else>
-		        super(BlockSetType.IRON, <@blockProperties/>);
-		    </#if>
-		<#elseif data.blockBase?has_content && data.blockBase == "Button">
-			<#if data.material.getUnmappedValue() == "WOOD">
-		        super(BlockSetType.OAK, 30, <@blockProperties/>);
+		<#if data.blockBase?has_content>
+			<#if data.blockBase == "Stairs">
+				super(Blocks.AIR.defaultBlockState(), <@blockProperties/>);
+			<#elseif data.blockBase == "PressurePlate" || data.blockBase == "TrapDoor" || data.blockBase == "Door">
+				super(BlockSetType.${data.blockSetType}, <@blockProperties/>);
+			<#elseif data.blockBase == "Button">
+				super(BlockSetType.${data.blockSetType}, <#if data.blockSetType == "OAK">30<#else>20</#if>, <@blockProperties/>);
+			<#elseif data.blockBase == "FenceGate">
+				super(WoodType.OAK, <@blockProperties/>);
 			<#else>
-		        super(BlockSetType.STONE, 20, <@blockProperties/>);
+				super(<@blockProperties/>);
 			</#if>
-		<#elseif data.blockBase?has_content && (data.blockBase == "TrapDoor" || data.blockBase == "Door")>
-			<#if data.material.getUnmappedValue() == "IRON">
-				super(BlockSetType.IRON, <@blockProperties/>);
-			<#elseif data.material.getUnmappedValue() == "WOOD">
-				super(BlockSetType.OAK, <@blockProperties/>);
-			<#else>
-				super(BlockSetType.STONE, <@blockProperties/>);
-			</#if>
-		<#elseif data.blockBase?has_content && data.blockBase == "FenceGate">
-			super(WoodType.OAK, <@blockProperties/>);
 		<#else>
 			super(<@blockProperties/>);
 		</#if>
@@ -250,6 +249,12 @@ public class ${name}Block extends
 	    );
 		</#if>
 	}
+
+	<#if data.renderType() == 4>
+    @Override protected RenderShape getRenderShape(BlockState state) {
+		return RenderShape.INVISIBLE;
+	}
+	</#if>
 
 	<#if data.blockBase?has_content && data.blockBase == "Stairs">
    	@Override public float getExplosionResistance() {
@@ -424,14 +429,7 @@ public class ${name}Block extends
 		}
 		<#else>
 		@Override public BlockState rotate(BlockState state, Rotation rot) {
-			if(rot == Rotation.CLOCKWISE_90 || rot == Rotation.COUNTERCLOCKWISE_90) {
-				if (state.getValue(AXIS) == Direction.Axis.X) {
-					return state.setValue(AXIS, Direction.Axis.Z);
-				} else if (state.getValue(AXIS) == Direction.Axis.Z) {
-					return state.setValue(AXIS, Direction.Axis.X);
-				}
-			}
-			return state;
+			return RotatedPillarBlock.rotatePillar(state, rot);
 		}
 		</#if>
 
@@ -482,12 +480,6 @@ public class ${name}Block extends
 	}
 	</#if>
 
-	<#if data.isReplaceable>
-	@Override public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
-		return context.getItemInHand().getItem() != this.asItem();
-	}
-	</#if>
-
 	<#if data.canProvidePower && data.emittedRedstonePower??>
 	@Override public boolean isSignalSource(BlockState state) {
 		return true;
@@ -522,6 +514,10 @@ public class ${name}Block extends
 	@Override public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
 		return ${mappedMCItemToItemStackCode(data.creativePickItem, 1)};
 	}
+	<#elseif !data.hasBlockItem>
+	@Override public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
+		return ItemStack.EMPTY;
+	}
 	</#if>
 
 	<#if generator.map(data.aiPathNodeType, "pathnodetypes") != "DEFAULT">
@@ -534,12 +530,6 @@ public class ${name}Block extends
 	@Override
 	public TriState canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction direction, BlockState plant) {
 		return TriState.TRUE;
-	}
-	</#if>
-
-	<#if data.isLadder>
-	@Override public boolean isLadder(BlockState state, LevelReader world, BlockPos pos, LivingEntity entity) {
-		return true;
 	}
 	</#if>
 
@@ -584,16 +574,7 @@ public class ${name}Block extends
 	}
 	</#if>
 
-	<#if hasProcedure(data.onRandomUpdateEvent)>
-	@OnlyIn(Dist.CLIENT) @Override public void animateTick(BlockState blockstate, Level world, BlockPos pos, RandomSource random) {
-		super.animateTick(blockstate, world, pos, random);
-		Player entity = Minecraft.getInstance().player;
-		int x = pos.getX();
-		int y = pos.getY();
-		int z = pos.getZ();
-		<@procedureOBJToCode data.onRandomUpdateEvent/>
-	}
-	</#if>
+	<@onAnimateTick data.onRandomUpdateEvent/>
 
 	<@onDestroyedByPlayer data.onDestroyedByPlayer/>
 
@@ -667,7 +648,7 @@ public class ${name}Block extends
 		public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int eventID, int eventParam) {
 			super.triggerEvent(state, world, pos, eventID, eventParam);
 			BlockEntity blockEntity = world.getBlockEntity(pos);
-			return blockEntity == null ? false : blockEntity.triggerEvent(eventID, eventParam);
+			return blockEntity != null && blockEntity.triggerEvent(eventID, eventParam);
 		}
 
 	    <#if data.inventoryDropWhenDestroyed>
@@ -699,6 +680,18 @@ public class ${name}Block extends
 	    </#if>
 	</#if>
 
+	<#if data.sensitiveToVibration && data.hasInventory>
+	@Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState blockstate, BlockEntityType<T> blockEntityType) {
+		if (!level.isClientSide && blockEntityType == ${JavaModName}BlockEntities.${REGISTRYNAME}.get()) {
+			return (_level, pos, state, blockEntity) -> {
+				if (blockEntity instanceof ${name}BlockEntity be)
+					VibrationSystem.Ticker.tick(_level, be.getVibrationData(), be.getVibrationUser());
+			};
+		}
+		return null;
+	}
+	</#if>
+
 	<#if data.tintType != "No tint">
 		@OnlyIn(Dist.CLIENT) public static void blockColorLoad(RegisterColorHandlersEvent.Block event) {
 			event.getBlockColors().register((bs, world, pos, index) -> {
@@ -724,10 +717,10 @@ public class ${name}Block extends
 						Minecraft.getInstance().level.getBiome(pos).value().getWaterFogColor() : 329011;
 					</#if>
 				</#if>
-			}, ${JavaModName}Blocks.${data.getModElement().getRegistryNameUpper()}.get());
+			}, ${JavaModName}Blocks.${REGISTRYNAME}.get());
 		}
 
-		<#if data.isItemTinted>
+		<#if data.isItemTinted && data.hasBlockItem>
 		@OnlyIn(Dist.CLIENT) public static void itemColorLoad(RegisterColorHandlersEvent.Item event) {
 			event.getItemColors().register((stack, index) -> {
 				<#if data.tintType == "Grass">
@@ -747,7 +740,7 @@ public class ${name}Block extends
 				<#else>
 					return 329011;
 				</#if>
-			}, ${JavaModName}Blocks.${data.getModElement().getRegistryNameUpper()}.get());
+			}, ${JavaModName}Blocks.${REGISTRYNAME}.get());
 		}
 		</#if>
 	</#if>
