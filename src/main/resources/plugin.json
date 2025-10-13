@@ -7,7 +7,7 @@
   ],
   "info": {
     "name": "Blockstates",
-    "version": "1.7",
+    "version": "1.7.1",
     "description": "Adds a new element to allow for the creation of block blockstates",
     "author": "NerdyPuzzle"
   }

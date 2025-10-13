@@ -51,7 +51,7 @@ public class BlockstatesGUI extends ModElementGUI<Blockstates> {
         mainEditor.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         pane3.add(PanelUtils.northAndCenterElement(PanelUtils.join(0, new Component[]{northPanel}), mainEditor));
-        this.addPage(pane3, false);
+        this.addPage(pane3, false).lazyValidate(this::validatePage);
     }
 
     private boolean blockAlreadyHasBlockstates() {
@@ -82,7 +82,7 @@ public class BlockstatesGUI extends ModElementGUI<Blockstates> {
         }
     }
 
-    protected AggregatedValidationResult validatePage(int page) {
+    protected AggregatedValidationResult validatePage() {
         if (block.getSelectedItem() == null)
             return new AggregatedValidationResult.FAIL(L10N.t("elementgui.blockstates.needs_block", new Object[0]));
         if (blockstateList.getEntries().isEmpty()) {
