@@ -186,7 +186,7 @@ public class ${name}Block extends
 		<#if data.hasTransparency>
 			.isRedstoneConductor((bs, br, bp) -> false)
 		</#if>
-		<#if (!data.isNotColidable && data.offsetType != "NONE") || (blockstates != "" && data.boundingBoxes??)>
+		<#if !data.isNotColidable && data.offsetType != "NONE">
 			.dynamicShape()
 		</#if>
 		<#if data.isReplaceable>
