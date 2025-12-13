@@ -29,7 +29,7 @@
 -->
 
 <#-- @formatter:off -->
-<#include "../boundingboxes.java.ftl">
+<#include "../cachedboundingboxes.java.ftl">
 <#include "../mcitems.ftl">
 <#include "../procedures.java.ftl">
 <#include "../triggers.java.ftl">
@@ -106,6 +106,19 @@ public class ${name}Block extends
 			</#if>
 		</#if>
 	</#list>
+
+    <#if (data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube()) || blockstates != "">
+    	<#if blockstates != "">
+    		<#list blockstates.blockstateList as state>
+    			<#if state.boundingBoxes?has_content && !state.isBoundingBoxEmpty()>
+    				<@defineCachedShapes "SHAPE_" + (state?index + 1) state.positiveBoundingBoxes state.negativeBoundingBoxes data.rotationMode data.enablePitch/>
+    			</#if>
+    		</#list>
+    	</#if>
+    	<#if !data.isBoundingBoxEmpty()>
+    		<@defineCachedShapes "SHAPE" data.positiveBoundingBoxes data.negativeBoundingBoxes data.rotationMode data.enablePitch/>
+    	</#if>
+    </#if>
 
 	<#if data.hasGravity>
 	public static final MapCodec<${name}Block> CODEC = simpleCodec(${name}Block::new);
@@ -307,27 +320,26 @@ public class ${name}Block extends
 	}
 	</#if>
 
-	<#if (data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube()) || blockstates != "">
+    <#if (data.boundingBoxes?? && !data.blockBase?? && !data.isFullCube()) || blockstates != "">
 	@Override public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-	    <#if blockstates != "">
-	        <#list blockstates.blockstateList as state>
-	            <#if state.boundingBoxes?has_content>
-	                if (state.getValue(BLOCKSTATE) == ${state?index + 1}) {
-	            		<#if state.isBoundingBoxEmpty()>
-                			return Shapes.empty();
-                		<#else>
-                			<#if !data.shouldDisableOffset()>Vec3 offset = state.getOffset(world, pos);</#if>
-                			<@boundingBoxWithRotation state.positiveBoundingBoxes() state.negativeBoundingBoxes() data.shouldDisableOffset() data.rotationMode data.enablePitch/>
-                		</#if>
-	                }
-	            </#if>
-	        </#list>
-	    </#if>
+		<#if !data.shouldDisableOffset()>Vec3 offset = state.getOffset(pos);</#if>
+		<#if blockstates != "">
+			<#list blockstates.blockstateList as state>
+				<#if state.boundingBoxes?has_content>
+					if (state.getValue(BLOCKSTATE) == ${state?index + 1}) {
+						<#if state.isBoundingBoxEmpty()>
+							return Shapes.empty();
+						<#else>
+							return (<@cacheShapeSwitch "SHAPE_" + (state?index + 1) data.rotationMode data.enablePitch/>)<#if !data.shouldDisableOffset()>.move(offset.x, offset.y, offset.z)</#if>;
+						</#if>
+					}
+				</#if>
+			</#list>
+		</#if>
 		<#if data.isBoundingBoxEmpty()>
 			return Shapes.empty();
 		<#else>
-			<#if !data.shouldDisableOffset()>Vec3 offset = state.getOffset(pos);</#if>
-			<@boundingBoxWithRotation data.positiveBoundingBoxes() data.negativeBoundingBoxes() data.shouldDisableOffset() data.rotationMode data.enablePitch/>
+			return (<@cacheShapeSwitch "SHAPE" data.rotationMode data.enablePitch/>)<#if !data.shouldDisableOffset()>.move(offset.x, offset.y, offset.z)</#if>;
 		</#if>
 	}
 	</#if>
