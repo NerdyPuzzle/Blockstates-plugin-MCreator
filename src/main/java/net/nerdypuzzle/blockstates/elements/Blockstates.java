@@ -7,6 +7,7 @@ import net.mcreator.element.types.interfaces.IBlockWithBoundingBox;
 import net.mcreator.ui.workspace.resources.TextureType;
 import net.mcreator.workspace.Workspace;
 import net.mcreator.workspace.elements.ModElement;
+import net.mcreator.workspace.references.ResourceReference;
 import net.mcreator.workspace.references.TextureReference;
 import net.mcreator.workspace.resources.Model;
 import net.mcreator.workspace.resources.TexturedModel;
@@ -22,6 +23,8 @@ import java.util.stream.Collectors;
 public class Blockstates extends GeneratableElement {
     public String block;
 
+    @TextureReference(TextureType.BLOCK)
+    @ResourceReference("model")
     public List<BlockstateListEntry> blockstateList = new ArrayList<>();
 
     public static class BlockstateListEntry implements IBlockWithBoundingBox {
