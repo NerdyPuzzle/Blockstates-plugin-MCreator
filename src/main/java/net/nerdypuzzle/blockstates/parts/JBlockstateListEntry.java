@@ -16,6 +16,7 @@ import net.mcreator.ui.minecraft.TextureSelectionButton;
 import net.mcreator.ui.minecraft.boundingboxes.JBoundingBoxList;
 import net.mcreator.ui.validation.IValidable;
 import net.mcreator.ui.validation.ValidationGroup;
+import net.mcreator.ui.validation.ValidationResult;
 import net.mcreator.ui.validation.Validator;
 import net.mcreator.ui.validation.validators.TextureSelectionButtonValidator;
 import net.mcreator.ui.workspace.resources.TextureType;
@@ -169,10 +170,10 @@ public class JBlockstateListEntry extends JSimpleListEntry<Blockstates.Blockstat
     protected void setEntryEnabled(boolean enabled) {
     }
 
-    @Override public Validator.ValidationResult getValidationStatus() {
-        Validator.ValidationResult validationResult = Validator.ValidationResult.PASSED;
+    @Override public ValidationResult getValidationStatus() {
+        ValidationResult validationResult = ValidationResult.PASSED;
         if (!page1group.validateIsErrorFree()) {
-            Validator.ValidationResult result = new Validator.ValidationResult(Validator.ValidationResultType.ERROR, page1group.getValidationProblemMessages().get(0));
+            ValidationResult result = new ValidationResult(ValidationResult.Type.ERROR, page1group.getValidationProblemMessages().get(0));
             return result;
         }
         return validationResult;
