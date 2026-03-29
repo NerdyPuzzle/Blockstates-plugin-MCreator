@@ -50,7 +50,7 @@ public class Launcher extends JavaPlugin {
                 }
                 for (Blockstates blockstates : workspace.getModElements().stream().filter(me -> me.getType() == PluginElementTypes.BLOCKSTATES).map(me -> (Blockstates) me.getGeneratableElement()).toList()) {
                     Block block = (Block) workspace.getModElementByName(blockstates.block).getGeneratableElement();
-                    block.customProperties.add(new PropertyDataWithValue<>(new PropertyData.IntegerType("blockstate", 0, blockstates.getBlockstateAmount()), 0));
+                    block.customProperties.add(new PropertyDataWithValue<>(new PropertyData.IntegerType("CUSTOM:blockstate", 0, blockstates.getBlockstateAmount()), 0));
                     int blockstateIndex = 0;
                     for (Blockstates.BlockstateListEntry entry : blockstates.blockstateList) {
                         blockstateIndex++;
