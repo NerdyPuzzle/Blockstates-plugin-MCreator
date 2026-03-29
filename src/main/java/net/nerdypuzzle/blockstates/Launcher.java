@@ -69,6 +69,7 @@ public class Launcher extends JavaPlugin {
                         StateMap stateMap = new StateMap();
                         stateMap.put(block.customProperties.getLast().property(), blockstateIndex);
                         newEntry.stateMap = stateMap;
+                        newEntry.setWorkspace(e.getMCreator().getWorkspace());
                         block.states.add(newEntry);
                     }
                     block.getModElement().reinit(workspace);
